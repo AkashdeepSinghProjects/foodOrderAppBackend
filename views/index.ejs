@@ -1,0 +1,11 @@
+<h1>Hi <%= locals.name %></h1>
+
+<a href="/login">Login</a>
+<br />
+<br />
+<br />
+<a href="/register">Register</a>
+
+<form action="/logout?_method=DELETE" method="POST">
+  <button type="submit">LogOut</button>
+</form>

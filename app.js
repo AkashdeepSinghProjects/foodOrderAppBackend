@@ -1,39 +1,55 @@
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import pg from "pg";
 import "dotenv/config";
+import passport from "passport";
+import session from "express-session";
+import flash from "express-flash";
+import methodOverride from "method-override";
+import passportInitialize from "./passport/passport-config.js";
+import { isAuthenticated } from "./passport/passportFn.js";
+import databaseQuery from "./database/db.js";
+import registerRoute from "./routes/registerRoute.js";
+import loginRoute from "./routes/loginRoute.js";
+import logoutRoute from "./routes/logoutRoute.js";
 
 const app = express();
 const port = process.env.BACKEND_PORT;
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
+app.use(flash());
+app.use(
+  session({
+    secret: process.env.SESSION_KEY,
+    saveUninitialized: false,
+    resave: false,
+  })
+);
 
-// database credentials
-const pgDbConfig = {
-  host: "localhost",
-  port: process.env.POSTGRESS_PORT,
-  database: "foodApp", // databse name
-  user: "postgres",
-  password: process.env.POSTGRESS_PASSWORD,
-};
+app.use(passport.initialize());
+app.use(passport.session());
+app.use(methodOverride("_method"));
 
-// Database connection
-async function databaseQuery(query) {
-  try {
-    const client = new pg.Client(pgDbConfig);
-    await client.connect();
-    const result = await client.query(query);
-    await client.end();
-    return result.rows;
-  } catch (err) {
-    console.log(err.message);
-    return;
-  }
-}
+app.use("/register", registerRoute);
+app.use("/login", loginRoute);
+app.use("/logout", logoutRoute);
 
-app.get("/", async (req, res) => {
+passportInitialize(
+  passport,
+  async (username) =>
+    await databaseQuery(
+      `SELECT * from users WHERE users.username ='${username}';`
+    ),
+  async (id) =>
+    await databaseQuery(`SELECT * from users WHERE users.id =${id};`)
+);
+
+app.get("/", isAuthenticated, (req, res) => {
+  res.render("index.ejs");
+});
+
+app.get("/food", async (req, res) => {
   if (req.query.type) {
     const result = await databaseQuery(
       `SELECT * FROM food_list WHERE type = '${req.query.type}'`
