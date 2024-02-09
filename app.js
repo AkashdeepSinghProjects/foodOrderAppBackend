@@ -14,14 +14,14 @@ import loginRoute from "./routes/loginRoute.js";
 import logoutRoute from "./routes/logoutRoute.js";
 
 const app = express();
-const port = process.env.BACKEND_PORT;
+const port = process.env.BACKEND_PORT || 3000;
 app.use(express.static("public"));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors());
 app.use(flash());
 app.use(
   session({
-    secret: process.env.SESSION_KEY,
+    secret: process.env.SESSION_KEY || 'cat',
     saveUninitialized: false,
     resave: false,
   })
